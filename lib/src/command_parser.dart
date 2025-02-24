@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:msh_dart/src/command/command.dart';
 import 'package:msh_dart/src/command_registry.dart';
 import 'package:msh_dart/src/output_engine/output_engine.dart';
 import 'package:msh_dart/src/util/util.dart';
@@ -18,6 +19,7 @@ class CommandParser {
   void run() {
     while (true) {
       resetEngines();
+
       printUserInputLine();
       var userInput = stdin.readLineSync();
 
@@ -33,7 +35,9 @@ class CommandParser {
   }
 
   void printUserInputLine() {
-    _currentOutputEngine.write("\$ ");
+    var dir = Pwd().execute([]);
+    var loc = dir.$1;
+    _currentOutputEngine.write("$loc \$ ");
   }
 
   (String?, String?) handleUserInput(String? userInput) {
@@ -41,7 +45,8 @@ class CommandParser {
       return (null, "No command entered. Please try again.");
     }
 
-    var (commandWord, args) = CommandParserUtils.extractCommandAndArgs(userInput);
+    var (commandWord, args) =
+        CommandParserUtils.extractCommandAndArgs(userInput);
     handleRedirection(args);
     return executeCommand(commandWord, args);
   }
@@ -50,21 +55,30 @@ class CommandParser {
     for (int i = 0; i < args.length; ++i) {
       var operatorType = args[i];
       bool isErrorStream = operatorType == "2>" || operatorType == "2>>";
-      bool isAppendMode = operatorType == ">>" || operatorType == "1>>" || operatorType == "2>>";
+      bool isAppendMode = operatorType == ">>" ||
+          operatorType == "1>>" ||
+          operatorType == "2>>";
 
-      if (operatorType == "1>" || operatorType == ">" || operatorType == ">>" || operatorType == "1>>" || operatorType == "2>" || operatorType == "2>>") {
+      if (operatorType == "1>" ||
+          operatorType == ">" ||
+          operatorType == ">>" ||
+          operatorType == "1>>" ||
+          operatorType == "2>" ||
+          operatorType == "2>>") {
         if (i + 1 < args.length && args[i + 1] != null) {
           var targetFile = args[i + 1]!;
           redirectStream(targetFile, isErrorStream, isAppendMode);
           removeOperatorAndFileName(args, i);
         } else {
-          writeOutput("Error: Missing target file for redirection.", _currentOutputErrorEngine);
+          writeOutput("Error: Missing target file for redirection.",
+              _currentOutputErrorEngine);
         }
       }
     }
   }
 
-  void redirectStream(String targetFile, bool isErrorStream, bool isAppendMode) {
+  void redirectStream(
+      String targetFile, bool isErrorStream, bool isAppendMode) {
     try {
       var outputEngine = FileOutputEngine(targetFile, append: isAppendMode);
       if (isErrorStream) {

@@ -8,7 +8,14 @@ class CommandRegistry {
   final Map<String, Command> _commands;
 
   CommandRegistry()
-      : _commands = HashMap<String, Command>(equals: caseInsensitive);
+      : _commands = HashMap<String, Command>(equals: caseInsensitive) {
+    _commands["cat"] = Cat();
+    _commands["cd"] = Cd();
+    _commands["echo"] = Echo();
+    _commands["exit"] = Exit();
+    _commands["pwd"] = Pwd();
+    _commands["type"] = Type(this);
+  }
 
   static bool Function(String, String) get caseInsensitive =>
       (a, b) => a.toLowerCase() == b.toLowerCase();
@@ -38,7 +45,8 @@ class CommandRegistry {
         _commands.containsKey(commandWord);
   }
 
-  (String?, String?) executeExternalProgramCommand(String executable, List<String?> args) {
+  (String?, String?) executeExternalProgramCommand(
+      String executable, List<String?> args) {
     String? executablePath = PathResolver.findExecutableInPath(executable);
     if (executablePath == null) {
       return (null, "$executable: command not found");
